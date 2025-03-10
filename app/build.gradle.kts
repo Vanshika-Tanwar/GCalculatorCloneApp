@@ -51,6 +51,7 @@ android {
 
 dependencies {
 
+    implementation("org.mozilla:rhino:1.7.14")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
