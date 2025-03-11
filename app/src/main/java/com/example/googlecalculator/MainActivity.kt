@@ -3,10 +3,11 @@ package com.example.googlecalculator
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -14,17 +15,19 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -36,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,7 +50,6 @@ import org.mozilla.javascript.Scriptable
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             GoogleCalculatorTheme {
                 CalculatorApp()
@@ -58,9 +61,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Calculator(modifier: Modifier = Modifier) {
     Column(modifier = modifier
-        .fillMaxWidth()
-        .background(Color(0xffebeffa))
-        .verticalScroll(rememberScrollState())
+        .fillMaxSize()
+        .background(Color(0xFFFCFBFF))
     ) {
         var history by remember {
             mutableStateOf(listOf<String>())
@@ -167,7 +169,7 @@ fun Expression(exp: String, onExpChange:(String) -> Unit, modifier: Modifier = M
         value = exp,
         onValueChange = onExpChange,
         singleLine = true,
-        textStyle = TextStyle(fontSize = 32.sp),
+        textStyle = TextStyle(fontSize = 45.sp, textAlign = TextAlign.End),
         colors = TextFieldDefaults.colors(
             cursorColor = Color.Blue,
             focusedContainerColor = Color.Transparent,
@@ -184,8 +186,9 @@ fun Result(result:String, modifier: Modifier = Modifier){
     val isError = result in listOf("Can't divide by 0","Keep it real","error")
     Text(
         text = result,
-        fontSize = 36.sp,
+        fontSize = 48.sp,
         color = if (isError) Color.Red else Color.Black,
+        textAlign = TextAlign.Right,
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
@@ -199,33 +202,79 @@ fun History(history: List<String>,modifier: Modifier = Modifier){
 
 @Composable
 fun CalculatorBtns(modifier: Modifier = Modifier.background(Color.White), onButtonClick: (String)->Unit){
-    val buttons = listOf(
+    var isExpanded by remember{mutableStateOf(false)}
+    val basicBtns = listOf(
         "AC","( )","%","÷",
         "7","8","9","x",
         "4","5","6","-",
         "1","2","3","+",
         "0",".","⌫","="
     )
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(4),
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-        ) {
-        items(buttons){ button ->
-            FilledTonalButton(
-                onClick = { onButtonClick(button) },
-                modifier= Modifier
-                    .padding(5.dp)
-                    .size(64.dp),
-                shape = CircleShape
-            ) {
-                Text(
-                    text = button,
-                    fontSize = 28.sp
-                )
+    val advBtns = listOf(
+        "√", "π", "^", "!",
+        "RAD", "INV", "sin", "cos",
+        "tan", "log", "ln", "exp"
+    )
+    val visibleAdvBtns = if(isExpanded) advBtns else (advBtns.take(4))
+    Column(modifier = modifier.fillMaxSize()){
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ){
+            visibleAdvBtns.take(4).forEach{ button ->
+                TextButton(onClick = {onButtonClick(button)}) {
+                    Text(text = button, fontSize = 28.sp, color = Color.Black)
+                }
             }
+            IconButton(
+                onClick = { isExpanded = !isExpanded },
+                modifier = Modifier.size(45.dp)
+            ) {
+                Icon(imageVector = if(isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = "expands the adv buttons")
+            }
+            if(isExpanded){
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp)
+                    ) {
+                    items(advBtns.drop(4)){button->
+                        TextButton(onClick = { onButtonClick(button)}) {
+                            Text(text = button, fontSize = 28.sp, color = Color.Black)
+                        }
+                    }
+                }
+            }
+        }
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            modifier = modifier
+                .fillMaxSize()
+                .wrapContentHeight()
+        ) {
+            items(basicBtns){ button ->
+                val buttonColor = when(button){
+                    "AC"->Color(0xFFC3EED0)
+                    "÷","x","-","+","%","()" -> Color(0xFFC3E7FF)
+                    "=" -> Color(0xFFD3E3FD)
+                    else -> Color(0xFFF8F9FD)
+                }
+                FilledTonalButton(
+                    onClick = { onButtonClick(button) },
+                    modifier= Modifier
+                        .padding(5.dp)
+                        .size(82.dp),
+                    shape = CircleShape,
+                    colors = ButtonDefaults.filledTonalButtonColors(containerColor = buttonColor)
+                ) {
+                    Text(
+                        text = button,
+                        fontSize = 30.sp
+                    )
+                }
 
+            }
         }
     }
 }
